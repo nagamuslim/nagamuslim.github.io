@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Embed Demonstration</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background-color: #f0f0f0; }
+        h1 { color: #333; }
+        .video-container {
+            position: relative;
+            width: 80%; /* Adjust as needed */
+            padding-bottom: 45%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 1000px; /* Optional: limit max width */
+            background: #000;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube Embed Example</h1>
+    <p>This is how a YouTube video is typically embedded using an iframe, as seen on the Reddit page.</p>
+    <div class="video-container">
+        <iframe width="356" height="200" src="https://www.youtube.com/embed/6QFcg6Ph1nQ?feature=oembed" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen title="《現在的是哪一個多聞!?》#5 (繁中字幕 | 日語原聲)【Ani-One Asia】"></iframe>
+    </div>
+    <p>The `src` attribute of the iframe points to the YouTube embed URL.</p>
+</body>
+</html>
