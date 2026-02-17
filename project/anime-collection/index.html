@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Collection - Ani-One Indonesia</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-content { max-width: 1400px; margin: 0 auto; position: relative; }
+        h1 { color: #fff; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 6px; }
+        .stats { color: #b0b0b0; font-size: 0.95em; margin-bottom: 14px; }
+        .search-input {
+            width: 100%; max-width: 500px;
+            padding: 12px 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            border-radius: 25px; color: white; font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        .search-input:focus { outline: none; border-color: rgba(102,126,234,0.5); background: rgba(255,255,255,0.08); }
+        .search-input::placeholder { color: #888; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        .anime-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px; overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: block; text-decoration: none; color: inherit;
+        }
+        .anime-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            border-color: rgba(102,126,234,0.5);
+        }
+        .thumbnail { position: relative; width: 100%; padding-top: 56.25%; overflow: hidden; }
+        .thumb-img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; display:block; }
+        .thumb-fallback {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .anime-icon { font-size: 4em; opacity: 0.9; }
+        .info { padding: 16px 18px 18px; }
+        .title {
+            color: #fff; font-size: 1.1em; font-weight: 600;
+            margin-bottom: 6px; line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; min-height: 3.1em;
+        }
+        .meta { color: #a0a0a0; font-size: 0.85em; }
+        .loading { text-align: center; padding: 60px; color: #b0b0b0; font-size: 1.2em; }
+        .no-results { text-align: center; padding: 60px; color: #888; }
+        .no-results-icon { font-size: 4em; margin-bottom: 16px; opacity: 0.5; }
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>&#127916; Anime Collection</h1>
+            <div class="stats" id="stats">Loading...</div>
+
+        <div id="updateRow" style="position:absolute; top:0; right:0; display:flex; align-items:center; gap:12px;">
+            <label style="cursor:pointer;">
+                <input type="file" id="txtFileInput" accept=".txt" multiple
+                       style="display:none;" />
+                <span style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+                             color:white; padding:8px 16px; border-radius:8px; font-size:0.85em;
+                             font-weight:600; cursor:pointer; transition:all 0.3s ease;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                      onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    &#128196; Update dari file .txt
+                </span>
+            </label>
+            <span id="updateStatus" style="font-size:0.82em; color:#a0a0a0;"></span>
+        </div>
+            <input type="text" class="search-input" id="searchInput" placeholder="&#128269; Cari anime..." />
+        </div>
+    </div>
+    <div class="container">
+        <div class="grid" id="animeGrid">
+            <div class="loading">&#9203; Memuat koleksi anime...</div>
+        </div>
+    </div>
+    <!-- update_data.js loaded from same folder — silently ignored if not present -->
+    <script src="update_data.js" onerror="void 0"></script>
+    <script>
+        let animeData = [];
+        const icons = ['&#127917;','&#9876;&#65039;','&#11088;','&#128293;','&#128167;','&#9889;','&#127919;','&#127800;','&#127914;','&#127912;','&#127925;','&#127982;','&#127769;','&#127774;','&#127888;'];
+        const colors = ['#ff6b6b','#4ecdc4','#ffe66d','#a8e6cf','#ffd93d','#6bcf7f','#95e1d3','#f38181','#aa96da','#fcbad3'];
+
+        function hashStr(s) {
+            let h = 0;
+            for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+            return Math.abs(h);
+        }
+
+        function createAnimeCard(anime) {
+            const card = document.createElement('a');
+            card.className = 'anime-card';
+            card.href = 'player.html?anime=' + encodeURIComponent(anime.name);
+
+            const h = hashStr(anime.name);
+            const icon = icons[h % icons.length];
+            const color = colors[h % colors.length];
+            const thumbId = anime.thumbnail_video_id;
+            const hqUrl  = thumbId ? 'https://img.youtube.com/vi/' + thumbId + '/hqdefault.jpg' : null;
+            const mqUrl  = thumbId ? 'https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg' : null;
+
+            card.innerHTML =
+                '<div class="thumbnail">' +
+                (hqUrl
+                    ? '<img class="thumb-img" src="' + hqUrl + '" alt="' + anime.name.replace(/"/g,'&quot;') + '"' +
+                      ' onerror="this.src=\'' + mqUrl + '\'; this.onerror=function(){this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';}" />'
+                    : '') +
+                '<div class="thumb-fallback" style="background:linear-gradient(135deg,' + color + '33 0%,' + color + '66 100%);' + (hqUrl ? '' : 'display:flex;') + '">' +
+                '<div class="anime-icon">' + icon + '</div></div>' +
+                '</div>' +
+                '<div class="info">' +
+                '<div class="title">' + anime.name + '</div>' +
+                '<div class="meta">' + anime.episode_count + ' Episodes &bull; Sub Indo</div>' +
+                '</div>';
+
+            return card;
+        }
+
+        function renderAnime(list) {
+            const grid = document.getElementById('animeGrid');
+            if (list.length === 0) {
+                grid.innerHTML = '<div class="no-results"><div class="no-results-icon">&#128269;</div><h2>Tidak ditemukan</h2><p>Coba kata kunci lain</p></div>';
+                return;
+            }
+            grid.innerHTML = '';
+            list.forEach(a => grid.appendChild(createAnimeCard(a)));
+        }
+
+
+        // ── Update from filtered*.txt files ──────────────────────────────────
+        function setupUpdater() {
+            const input  = document.getElementById('txtFileInput');
+            const status = document.getElementById('updateStatus');
+            if (!input) return;
+
+            // Hide the update button entirely if AnimeUpdater didn't load
+            if (typeof AnimeUpdater === 'undefined') {
+                const row = document.getElementById('updateRow');
+                if (row) row.style.display = 'none';
+                return;
+            }
+
+            input.addEventListener('change', async function() {
+                if (!this.files || this.files.length === 0) return;
+                status.textContent = 'Membaca file...';
+
+                try {
+                    // Read all selected files
+                    const contents = await Promise.all(
+                        Array.from(this.files).map(f => f.text())
+                    );
+
+                    // Parse + merge
+                    const groups = AnimeUpdater.parseMultiple(contents);
+                    const existing = AnimeUpdater.loadLocal() ||
+                                     (animeData.length ? { anime_list: animeData } : null);
+                    const { data, stats } = AnimeUpdater.mergeData(existing, groups);
+
+                    // Save to localStorage
+                    const saved = AnimeUpdater.saveLocal(data);
+
+                    // Reload the UI
+                    animeData = data.anime_list;
+                    const totalEps = animeData.reduce((s,a) => s + a.episode_count, 0);
+                    document.getElementById('stats').textContent =
+                        data.total_series + ' Anime Series \u2022 ' + totalEps + ' Total Episodes';
+                    renderAnime(animeData);
+
+                    const msg = '+' + stats.added + ' baru, -' + stats.removed + ' dihapus, ' +
+                                stats.updated + ' diperbarui' +
+                                (saved ? ' \u2014 tersimpan ke localStorage' : ' \u2014 localStorage penuh, download saja');
+                    status.textContent = msg;
+
+                    // Also offer file download if not saved to localStorage
+                    if (!saved) {
+                        AnimeUpdater.saveData(data);
+                    }
+
+                } catch(e) {
+                    status.textContent = '\u274C Error: ' + e.message;
+                    console.error(e);
+                }
+
+                // Reset input so same file can be selected again
+                this.value = '';
+            });
+        }
+
+        // Load priority: localStorage (instant) → server JSON (fallback)
+        async function loadAnimeData() {
+            let data = null;
+
+            // 1. Try localStorage first (sync, instant, no network)
+            try {
+                const raw = localStorage.getItem('anime_data');
+                if (raw) data = JSON.parse(raw);
+            } catch(e) {}
+
+            // 2. Fall back to server JSON
+            if (!data || !data.anime_list) {
+                try {
+                    const res = await fetch('anime_data.json');
+                    data = await res.json();
+                } catch(e) {}
+            }
+
+            if (!data || !data.anime_list) {
+                document.getElementById('animeGrid').innerHTML = '<div class="loading">&#10060; Tidak ada data. Jalankan update_data.js dulu.</div>';
+                return;
+            }
+
+            animeData = data.anime_list;
+            const totalEps = animeData.reduce((s,a) => s + a.episode_count, 0);
+            document.getElementById('stats').textContent = data.total_series + ' Anime Series \u2022 ' + totalEps + ' Total Episodes';
+            renderAnime(animeData);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', e => {
+            const term = e.target.value.toLowerCase().trim();
+            renderAnime(term ? animeData.filter(a => a.name.toLowerCase().includes(term)) : animeData);
+        });
+
+        loadAnimeData();
+        setupUpdater();
+    </script>
+</body>
+</html>
