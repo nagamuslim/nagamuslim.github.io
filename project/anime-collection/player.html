@@ -137,8 +137,14 @@
         let currentEpNumber = null; // the episode number currently playing
         let sortOrder = 'asc';      // 'asc' = default (1,2,3...), 'desc' = newest (N,...,2,1)
 
-        function embedUrl(id) {
-            return 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0';
+        function embedUrl(id, startSeconds) {
+            var url = 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0';
+            if (startSeconds) url += '&start=' + startSeconds;
+            // Add captions for true marathons OR series flagged for CC
+            if (currentAnime && (currentAnime.marathon_video_id || currentAnime.use_cc)) {
+                url += '&cc_load_policy=1&cc_lang_pref=id';
+            }
+            return url;
         }
 
         // Episodes sorted for display only
@@ -259,7 +265,7 @@
             if (!video) return;
 
             // Update player
-            document.getElementById('videoPlayer').src = embedUrl(video.video_id);
+            document.getElementById('videoPlayer').src = embedUrl(video.video_id, video.start_seconds);
             document.getElementById('currentTitle').textContent = currentAnime.name;
             var epLabel = video.end_episode ? 'Episode ' + video.episode + '-' + video.end_episode : 'Episode ' + video.episode;
             document.getElementById('currentMeta').textContent = epLabel + ' \u2022 Sub Indonesia';
@@ -278,7 +284,8 @@
             getDisplayList().forEach(video => {
                 const item = document.createElement('div');
                 item.className = 'episode-item' + (video.episode === currentEpNumber ? ' active' : '');
-                const cleanTitle = video.end_episode ? 'Episode ' + video.episode + '-' + video.end_episode : 'Episode ' + video.episode;
+                const epLabel = video.end_episode ? 'Episode ' + video.episode + '-' + video.end_episode : 'Episode ' + video.episode;
+                const cleanTitle = video.chapter_title || epLabel;
                 item.innerHTML =
                     '<div class="ep-num">EP ' + video.episode + '</div>' +
                     '<div class="ep-title">' + cleanTitle + '</div>';
