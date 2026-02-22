@@ -1,0 +1,3 @@
+[submodule "project/anime-collection"]
+	path = project/anime-collection
+	url = https://github.com/nagamuslim/anime-collection.git
