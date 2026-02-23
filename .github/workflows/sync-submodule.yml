@@ -2,6 +2,8 @@ name: Sync Anime Submodule
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: [submodule_updated] # Listen for this specific "ping"
   schedule:
     - cron: '0 */6 * * *'
 
@@ -20,14 +22,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Force update the submodule to the latest remote commit without merging
           git submodule update --remote --init --force project/anime-collection
           
-          # Check for changes
           if git diff --quiet; then
-            echo "No changes found. Submodule is already up to date."
+            echo "No changes found. Submodule already up to date."
           else
             git add project/anime-collection
-            git commit -m "Auto-sync: update anime-collection submodule to latest"
+            git commit -m "Auto-sync: update anime-collection to latest"
             git push origin main
           fi
