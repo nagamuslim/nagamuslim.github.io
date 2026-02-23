@@ -1,0 +1,33 @@
+name: Sync Anime Submodule
+
+on:
+  workflow_dispatch: # Manual trigger button
+  schedule:
+    - cron: '0 */6 * * *' # Automatically check every 6 hours
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Submodule
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Pull the latest commit from the submodule's main branch
+          git submodule update --remote --merge project/anime-collection
+          
+          # Check for changes
+          if git diff --quiet; then
+            echo "No changes found. Submodule is already up to date."
+          else
+            git add project/anime-collection
+            git commit -m "Auto-sync: update anime-collection to latest"
+            git push origin main
+          fi
