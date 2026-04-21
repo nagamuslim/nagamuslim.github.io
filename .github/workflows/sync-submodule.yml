@@ -20,7 +20,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          git submodule update --remote --init --force project/anime-collection
+          git submodule update --remote --init --force --depth 1 project/anime-collection
           
           if git diff --quiet; then
             echo "No changes found. Submodule already up to date."
